@@ -40,6 +40,7 @@ async function run() {
     const paymentCollection = client.db("speed_battery_manufacturer").collection("payments");
     const userCollection = client.db("speed_battery_manufacturer").collection("users");
     const reviewCollection = client.db("speed_battery_manufacturer").collection("reviews");
+    const blogCollection = client.db("speed_battery_manufacturer").collection("blogs");
 
     const verifyAdmin = async (req, res, next) => {
       const email = req.decoded.email;
@@ -51,6 +52,12 @@ async function run() {
       next();
     }
 
+
+    /************************************ Blog api *********************************************/
+    app.get('/blog', async (req, res) => {
+      const result = await blogCollection.find({}).toArray()
+      res.send(result)
+    })
 
     /************************************ Create Review api *********************************************/
     app.get('/review', async (req, res) => {
@@ -64,7 +71,7 @@ async function run() {
     })
     /************************************ User api *********************************************/
 
-    app.delete("/user/:email", verifyJwt,verifyAdmin, async (req, res) => {
+    app.delete("/user/:email", verifyJwt, verifyAdmin, async (req, res) => {
       const { email } = req.params
       const result = await userCollection.deleteOne({ email });
       if (result.deletedCount > 0) {
@@ -72,7 +79,7 @@ async function run() {
       }
 
     })
-    app.get("/user", verifyJwt,verifyAdmin, async (req, res) => {
+    app.get("/user", verifyJwt, verifyAdmin, async (req, res) => {
       const result = await userCollection.find({}).sort({ $natural: -1 }).toArray();
       res.send(result)
 
@@ -89,12 +96,12 @@ async function run() {
       const user = await userCollection.findOne({ email })
       if (!!user?.isAdmin) {
         return res.send({ success: true })
-      }else{
+      } else {
         return res.send({ success: false })
       }
 
     })
-    app.put("/user/admin", verifyJwt,verifyAdmin, async (req, res) => {
+    app.put("/user/admin", verifyJwt, verifyAdmin, async (req, res) => {
       const { email, status } = req.body
       const result = await userCollection.updateOne({ email }, { $set: { isAdmin: status } }, { upsert: true });
       if (result.modifiedCount > 0) {
@@ -119,12 +126,12 @@ async function run() {
     })
     /************************************ Create Token api *********************************************/
     app.post("/createToken", async (req, res) => {
-      const {email} = req.body
-      const authAccessToken = jwt.sign({email}, process.env.JWT_ACCESS_TOKEN, { expiresIn: "1d" })
+      const { email } = req.body
+      const authAccessToken = jwt.sign({ email }, process.env.JWT_ACCESS_TOKEN, { expiresIn: "1d" })
       res.send({ authAccessToken })
     })
     /************************************ Shipping api *********************************************/
-    app.patch('/shipping/:productID', verifyJwt,verifyAdmin, async (req, res) => {
+    app.patch('/shipping/:productID', verifyJwt, verifyAdmin, async (req, res) => {
       const productID = req.params.productID
       const updateDoc = {
         $set: {
@@ -178,7 +185,7 @@ async function run() {
       const result = await ordersCollection.find({ email }).sort({ $natural: -1 }).toArray()
       res.send(result)
     })
-    app.get('/order', verifyJwt,verifyAdmin, async (req, res) => {
+    app.get('/order', verifyJwt, verifyAdmin, async (req, res) => {
       const result = await ordersCollection.find({}).sort({ $natural: -1 }).toArray()
       res.send(result)
     })
@@ -190,12 +197,12 @@ async function run() {
     })
 
     /************************************ Product api *********************************************/
-    app.delete('/product/:productID', verifyJwt,verifyAdmin, async (req, res) => {
+    app.delete('/product/:productID', verifyJwt, verifyAdmin, async (req, res) => {
       const { productID } = req.params
       await productCollection.deleteOne({ _id: ObjectId(productID) });
       res.send({ success: true, message: `Product Successfully Deleted` })
     })
-    app.put('/product', verifyJwt,verifyAdmin, async (req, res) => {
+    app.put('/product', verifyJwt, verifyAdmin, async (req, res) => {
       const product = req.body
       const result = await productCollection.updateOne({ _id: ObjectId(product.id) }, { $set: product });
       res.send({ success: true, message: `${product.name} is updated` })
@@ -211,11 +218,11 @@ async function run() {
     })
 
 
-    app.get('/product_all', verifyJwt,verifyAdmin, async (req, res) => {
+    app.get('/product_all', verifyJwt, verifyAdmin, async (req, res) => {
       const result = await productCollection.find({}).project({ image: 0, description: 0 }).sort({ $natural: -1 }).toArray()
       res.send(result)
     })
-    app.post('/product', verifyJwt,verifyAdmin, async (req, res) => {
+    app.post('/product', verifyJwt, verifyAdmin, async (req, res) => {
       const product = req.body
       await productCollection.insertOne(product)
       res.send({ success: true, message: `${product.name} is ready to sell!` })
