@@ -4,6 +4,8 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require('dotenv').config();
 var jwt = require('jsonwebtoken');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+const nodemailer = require('nodemailer');
+const mg = require('nodemailer-mailgun-transport');
 const app = express()
 const port = process.env.PORT || 5000
 
@@ -27,7 +29,7 @@ function verifyJwt(req, res, next) {
     req.decoded = decoded;
     next();
   })
-
+  // next();
 }
 
 
@@ -45,7 +47,7 @@ async function run() {
     const verifyAdmin = async (req, res, next) => {
       const email = req.decoded.email;
       const user = await userCollection.findOne({ email })
-      // console.log('isAdmin',!user.isAdmin);
+      // // console.log('isAdmin',!user.isAdmin);
       if (!user.isAdmin) {
         return res.status(403).send({ message: "Forbidden Access." })
       }
@@ -234,6 +236,36 @@ async function run() {
   }
 }
 run().catch(console.dir);
+
+/************************************ MailGun api *********************************************/
+const auth = {
+  auth: {
+    api_key:process.env.MAILGUN_API_KEY,
+    domain:process.env.MAILGUN_DOMAIN
+  }
+}
+
+const nodemailerMailGun = nodemailer.createTransport(mg(auth));
+const email = {
+  from: 'myemail@example.com',
+  to: 'blowberry97@gmail.com',
+  subject: 'Hey you, awesome!',
+  html: '<b>Wow Big powerful letters</b>',
+  text: 'Bro Yoo'
+}
+// app.get('/email', async (req, res) => {
+  
+//   nodemailerMailGun.sendMail(email, (err, info) => {
+//     if (err) {
+//       console.log(err);
+//     }
+//     else {
+//       console.log(info);
+//       res.send('Mail has sent')
+//     }
+//   });
+
+// })
 
 
 app.get('/', (req, res) => {
